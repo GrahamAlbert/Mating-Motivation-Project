@@ -32,6 +32,9 @@ require(dplyr)
 ####for data manipulation.
 ```{r}
 require(corrplot)
+require(rlang)
+require(yaml)
+require(stringi)
 require(semPlot)
 ```
 ####for correlation plot depiction.
@@ -253,9 +256,11 @@ factorone=~MMS49+MMS54+MMS59+MMS62+MMS64+MMS66+MMS69+MMS73+MMS74+MMS76+MMS77+MMS
 ```
 ####run the models.
 ```{r}
-seven.fit=cfa(seven.model, datat=noout)
+seven.fit=cfa(seven.model, data=noout)
 one.fit=cfa(one.model, data=noout)
 ```
 ####to create path models.
-
+```{r}
 semPaths(seven.fit, whatLabels="std",layout="tree")
+semPaths(one.fit, whatLabels="std",layout="tree")
+```
