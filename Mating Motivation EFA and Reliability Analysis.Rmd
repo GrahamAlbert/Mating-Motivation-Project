@@ -264,3 +264,25 @@ one.fit=cfa(one.model, data=noout)
 semPaths(seven.fit, whatLabels="std",layout="tree")
 semPaths(one.fit, whatLabels="std",layout="tree")
 ```
+###To check for heywood cases in the 7 factor model.
+####to obtain summary statistics for the 7 factor  model.
+```{r}
+summary(seven.fit, standardized=TRUE, rsquare=TRUE)
+```
+####All of our error variances are positive and none of our R squared values are over 1 (i.e., we do not have Heywood cases) therefore we procede with CFA.
+####To look for proiblems in fit using a residual correlation table.
+```{r}
+correl2 = residuals(seven.fit, type="cor")
+correl2
+```
+####To view correlation table.
+```{r}
+View(correl2$cor)
+zcorrel2 = residuals(seven.fit, type="standardized")
+View(zcorrel2$cov)
+modindices(seven.fit, sort. =TRUE, minimum.value=3.84)
+summary(one.fit,standardized=TRUE,rsquare=TRUE)
+fitMeasures(seven.fit)
+```
+
+fitMeasures(one.fit)
