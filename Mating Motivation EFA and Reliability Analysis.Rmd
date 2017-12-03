@@ -1,0 +1,261 @@
+---
+title: "Mating Motivation EFA and Reliability Analysis"
+author: "Graham Albert"
+date: "December 1, 2017"
+output: html_document
+---
+
+####To load the necessary packages into my R work space to conduct both EFA and CFA.
+```{r}
+require(psych) 
+```
+######for efa
+```{r}
+require(lavaan) 
+```
+######for cfa
+```{r}
+require(curl) 
+```
+######loading data
+```{r}
+require(mice)
+```
+######missing data
+```{r}
+require(GPArotation)
+```
+#####for more advanced rotation.
+```{r}
+require(dplyr)
+```
+####for data manipulation.
+```{r}
+require(corrplot)
+require(semPlot)
+```
+####for correlation plot depiction.
+```{r}
+require(gplots)
+require(gridExtra)
+require(moments)
+```
+###linearity depiction.
+####To load my data set for the mating motivation scale into the  R work space.
+```{r}
+f <- curl("https://raw.githubusercontent.com/GrahamAlbert/Mating-Motivation-Project/master/MatingMotivationScaleEFA_20171201.csv")
+MatingMotivationScaleV1<- read.csv(f, header = TRUE, sep = ",", stringsAsFactors = FALSE)
+View(MatingMotivationScaleV1)
+```
+####To determine variable names of the data set.
+```{r}
+MatingMotivationScaleV1<-MatingMotivationScaleV1[-1]
+View(MatingMotivationScaleV1)
+```
+####To obtain summary statistics for the data set.
+```{r}
+summary(MatingMotivationScaleV1)
+```
+####To screening for missing values.
+####To write a funtion to check for missng data.
+```{r}
+percentmiss=function(x){sum(is.na(x)/length(x))*100}
+```
+####To check for missing data
+```{r}
+missing=apply(MatingMotivationScaleV1, 1,percentmiss)
+table(missing)
+```
+####To exclude participants who are mijssingn too much data.
+```{r}
+replacepeople=subset(MatingMotivationScaleV1, missing<=5)
+```
+####Make sure taht the columns are not missing too much data.
+```{r}
+apply(replacepeople, 2, percentmiss)
+```
+#####Base on an analysis of the columns it appears that the data is missing completely at random and we proceed with replacing the data using the package mice.
+```{r}
+tempnomiss = mice(replacepeople)
+nomiss = complete (tempnomiss, 1)
+summary(nomiss)
+```
+####To screen for multivariate outliers.
+####To screen for multivariate outliers in the data set nomiss we will use mahalanbis.
+```{r}
+cutoff = qchisq(0.99, ncol(nomiss))
+mahal = mahalanobis(nomiss, 
+                    colMeans(nomiss),
+                    cov(nomiss))
+cutoff #####generates cutoff score
+ncol(nomiss) #####determines df
+summary(mahal<cutoff)
+```
+####To exelucde the 31 outliers from the analysis.
+```{r}
+noout = subset(nomiss, mahal<cutoff)
+head(noout)
+```
+###Assumptions.
+####To screen for addivity.
+```{r}
+correl=cor(noout, use ="pairwise.complete.obs")
+symnum(correl)
+```
+####To view new data set noout.
+```{r}
+View(noout)
+```
+###EFA assumption set up.
+```{r}
+random = rchisq(nrow(noout), 7)
+fake = lm(random ~.,data=noout)
+standardized = rstudent(fake)
+fitted = scale(fake$fitted.values)
+```
+####To test for normality.
+```{r}
+hist(standardized)
+```
+####To test for linearity.
+```{r}
+qqnorm(standardized)
+```
+####Homogenity of Variance.
+```{r}
+plot(fitted, standardized)
+abline(0,0)
+abline(v=0)
+```
+###Runninng the efa analysis.
+####correlation adequacy Bartlett's test.
+```{r}
+cortest.bartlett(correl, n = nrow(noout))
+```
+####sampling adequacy KMO test.
+```{r}
+KMO(correl)
+```
+####detereminig number of factors for extraction.
+```{r}
+nofactors <- fa.parallel(noout,fm="ml",fa="fa")
+sum(nofactors$fa.values > 1.0)#####old kaiser criterion
+sum(nofactors$fa.values > 0.7)#####new kaiser criterion
+```
+####I have elected to go withe fewest number of factors based on the old kaiser criterion and extract 7.
+####To conduct my first factor anlaysis with oblimin roation and fm being maximum likelihood.
+```{r}
+round1 = fa(noout,nfactors=7,rotate="oblimin", fm="ml")
+round1
+```
+####To conduct my second factor anlaysis with oblimin roation and fm being maximum likelihood.
+```{r}
+round2 = fa(noout[ ,-c(30,55,7,1,9,35,29,39,45,61,63,79,14,15,18,19,25,40,48,60,78)],nfactors=7,rotate="oblimin", fm="ml")
+round2
+```
+####To conduct my third factor anlaysis with oblimin roation and fm being maximum likelihood.
+```{r}
+round3 = fa(noout[ ,-c(30,55,7,1,9,35,29,39,45,61,63,79,14,15,18,19,25,40,48,60,78,50,58,24)],nfactors=7,rotate="oblimin", fm="ml")
+round3
+```
+####To conduct my fourth factor anlaysis with oblimin roation and fm being maximum likelihood.
+```{r}
+round4 = fa(noout[ ,-c(30,55,7,1,9,35,29,39,45,61,63,79,14,15,18,19,25,40,48,60,78,50,58,24,28,33,34,47,53)],nfactors=7,rotate="oblimin", fm="ml")
+round4
+```
+####To conduct my fifth factor anlaysis with oblimin roation and fm being maximum likelihood.
+```{r}
+round5 = fa(noout[ ,-c(30,55,7,1,9,35,29,39,45,61,63,79,14,15,18,19,25,40,48,60,78,50,58,24,28,33,34,47,53,5,6)],nfactors=7,rotate="oblimin", fm="ml")
+round5
+```
+####To conduct my sixth factor anlaysis with oblimin roation and fm being maximum likelihood.
+```{r}
+finalmodel= fa(noout[ ,-c(30,55,7,1,9,35,29,39,45,61,63,79,14,15,18,19,25,40,48,60,78,50,58,24,28,33,34,47,53,5,6,16,67)],nfactors=7,rotate="oblimin", fm="ml")
+finalmodel
+```
+####To compute the CFI.
+```{r}
+CFI<-1-((finalmodel$STATISTIC-finalmodel$dof)/(finalmodel$null.chisq-finalmodel$null.dof))
+CFI
+```
+####Reliablity.
+```{r}
+factor1=c(49,54,59,62,64,66,69,73,74,76,77)
+factor2=c(3,12,13,20,22,26,42,51)
+factor3=c(38,44,65)
+factor4=c(17,32,41,46)
+factor5=c(11,27,56,57,68,70,75)
+factor6=c(2,8,10,21,23,31,36,43)
+factor7=c(4,37,52,71,72)
+```
+#####Alpla reliability.
+```{r}
+alpha(noout[,factor1])
+alpha(noout[,factor2])
+alpha(noout[,factor3])
+alpha(noout[,factor4])
+alpha(noout[,factor5],check.keys=TRUE)
+alpha(noout[,factor6])
+alpha(noout[,factor7])
+```
+####To create factor scores to used later for SEM to determine both convergent and dizcriminatn validity.
+```{r}
+noout$f1=apply(noout[,factor1], 1,mean)#####creates average score for f1.
+noout$f2=apply(noout[,factor2], 1,mean)#####creates average score for f2.
+noout$f3=apply(noout[,factor3], 1,mean)#####creates average score for f3.
+noout$f4=apply(noout[,factor4], 1,mean)#####creates average score for f4.
+noout$f5=apply(noout[,factor5], 1,mean)#####creates average score for f5.
+noout$f6=apply(noout[,factor6], 1,mean)#####creates average score for f6.
+noout$f7=apply(noout[,factor7], 1,mean)#####creates average score for f7.
+head(noout)
+```
+####To summarized the data.
+```{r}
+summary(noout)
+```
+####To obtain standard deviations for each of the 7 factors.
+````{r}
+sd(noout$f1)
+sd(noout$f2)
+sd(noout$f3)
+sd(noout$f4)
+sd(noout$f5)
+sd(noout$f6)
+sd(noout$f7)
+```
+####To create a factor plot.
+```{r}
+factor.plot(finalmodel, labels=rownames(finalmodel)) 
+```   
+#To create a diagram of the analysis.
+```{r}
+fa.diagram(finalmodel, simple=FALSE)
+```
+###To conduct CFA.
+####To recode item 11.
+```{R}
+```
+####To create the seven factor mode.
+```{r}
+seven.model='
+factone=~MMS49+MMS54+MMS59+MMS62+MMS64+MMS66+MMS69+MMS73+MMS74+MMS76+MMS77
+facttwo=~MMS3+MMS12+MMS13+MMS20+MMS22+MMS26+MMS42+MMS51
+factthree=~MMS38+MMS44+MMS65
+factfour=~MMS17+MMS32+MMS41+MMS46
+factorfive=~MMS11+MMS27_rc+MMS56_rc+MMS57_rc+MMS68_rc+MMS70_rc+MMS75_rc
+factorsix=~MMS2+MMS8+MMS10+MMS21+MMS23+MMS31+MMS36+MMS43
+factorseven=~MMS4+MMS37+MMS52+MMS71+MMS72'
+```
+####To create one factor model.
+```{r}
+one.model='
+factorone=~MMS49+MMS54+MMS59+MMS62+MMS64+MMS66+MMS69+MMS73+MMS74+MMS76+MMS77+MMS3+MMS12+MMS13+MMS20+MMS22+MMS26+MMS42+MMS51+MMS38+MMS44+MMS65+MMS17+MMS32+MMS41+MMS46+MMS11+MMS27_rc+MMS56_rc+MMS57_rc+MMS68_rc+MMS70_rc+MMS75_rc+MMS2+MMS8+MMS10+MMS21+MMS23+MMS31+MMS36+MMS43+MMS4+MMS37+MMS52+MMS71+MMS72'
+```
+####run the models.
+```{r}
+seven.fit=cfa(seven.model, datat=noout)
+one.fit=cfa(one.model, data=noout)
+```
+####to create path models.
+
+semPaths(seven.fit, whatLabels="std",layout="tree")
